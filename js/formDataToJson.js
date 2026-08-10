@@ -15,10 +15,7 @@ async function retrieveFile(filePath) {
 }
 
 function isMultiSelect(obj) {
-	if (obj && obj.Suggestions !== undefined) {
-		return false;
-	}
-
+	if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) return false;
 	for (const key in obj) {
 		if (typeof obj[key] !== 'boolean') {
 			return false;
@@ -36,50 +33,65 @@ function getSelectedOptions(options) {
 			selectedOptions.push(key);
 		}
 	}
+
 	return selectedOptions;
 }
 
+function isEmptyObject(obj) {
+	return Object.values(obj).every(value =>
+		value === "" ||
+		value === null ||
+		value === undefined
+	);
+}
+
+function getSchemaFields(schema) {
+	if (!schema || typeof schema !== 'object') {
+		return [];
+	}
+
+	if (schema.properties && schema.properties.items) {
+		return Object.keys(schema.properties.items);
+	}
+
+	if (schema.properties) {
+		return Object.keys(schema.properties);
+	}
+
+	if (Array.isArray(schema)) {
+		return schema;
+	}
+
+	return Object.keys(schema);
+}
+
 // Populates fields with form data
-function populateObject(data, schema) {
+function populateObject(data, fields) {
 	let reorderedObject = {}
+	const fieldNames = Array.isArray(fields) ? fields : Object.keys(fields || {});
 
-	// Array of fields following proper order of fields in schema
-	const schemaFields = schema?.properties?.items ? Object.keys(schema.properties.items) : [];
-	const dataFields = Object.keys(data);
+	console.log("fieldz: ", fieldNames)
 
-	const allFields = [...schemaFields];
-	dataFields.forEach(field => {
-		if (!allFields.includes(field)) {
-			allFields.push(field);
-		}
-	});
+	for (const field of fieldNames) {
+		let value = data[field];
 
-	for (const key of allFields) {
-		let value = data[key];
-
-		if (value === undefined || value === null) {
+		// Does not assign optional properties with blank values
+		if (value == null || value === "" || (Array.isArray(value) && typeof value[0] === 'object' && isEmptyObject(value[0]))) {
 			continue;
 		}
-
-		if (schema.properties.items[key]?.type === "object" &&
-			schema.properties.items[key]?.properties?.Suggestions) {
-				if (typeof value === "object" && !Array.isArray(value)) {
-					reorderedObject[key] = value;
-				} else {
-					reorderedObject[key] = {
-						Suggestions: Array.isArray(value) ? value : []
-					};
-				}
-				continue;
-			}
 
 		// Adjusts value accordingly if multi-select field
 		if ((typeof value === "object" && isMultiSelect(value))) {
 			value = getSelectedOptions(value);
 		}
+		// Recurses if multi-field object
+		else if (typeof value === 'object' && !Array.isArray(value) && value !== null && Object.keys(value).length > 1) {
+			value = populateObject(value, Object.keys(value));
+		}
 
-		reorderedObject[key] = value;
+		reorderedObject[field] = value;
 	}
+
 	return reorderedObject;
 }
 
@@ -92,7 +104,8 @@ async function populateCodeJson(data) {
 
 	// Populates fields with form data
 	if (schema) {
-		codeJson = populateObject(data, schema);
+		const fieldNames = getSchemaFields(schema);
+		codeJson = populateObject(data, fieldNames);
 	} else {
 		console.error("Failed to retrieve JSON data.");
 	}
