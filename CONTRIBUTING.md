@@ -84,3 +84,36 @@ Some important notes regarding the summary line:
 ## Reviewing Pull Requests
 
 Pull requests will be reviewed by the CMS Open Source Program Office team.
+ 
+ ### Team Specific Guidelines 
+<!-- TODO: This section helps contributors understand any team structure in the project (formal or informal.) Encouraged to point towards the COMMUNITY.md file for further details.--> 
+ 
+ ### Building Dependencies 
+<!--- TODO: This step is often skipped, so don't forget to include the steps needed to install on your platform. If you project can be multi-platform, this is an excellent place for first time contributors to send patches!--> 
+ 
+ ### Building the Project 
+<!--- TODO: Be sure to include build scripts and instructions, not just the source code itself! -->
+ 
+ ### Testing Conventions 
+<!--- TODO: Discuss where tests can be found, how they are run, and what kind of tests/coverage strategy and goals the project has. --> 
+ 
+ ### Coding Style and Linters 
+<!--- TODO: HIGHLY ENCOURAGED. Specific tools will vary between different languages/frameworks (e.g. Black for python, eslint for JavaScript, etc...)
+1. Mention any style guides you adhere to (e.g. pep8, etc...)
+2. Mention any linters your project uses (e.g. flake8, jslint, etc...)
+3. Mention any naming conventions your project uses (e.g. Semantic Versioning, CamelCasing, etc...)
+4. Mention any other content guidelines the project adheres to (e.g. plainlanguage.gov, etc...)
+--> 
+ 
+ ## Policies 
+ 
+ ### Open Source Policy 
+We adhere to the [CMS Open Source Policy](https://github.com/CMSGov/cms-open-source-policy). If you have any questions, just [shoot us an email](mailto:opensource@cms.hhs.gov).
+ 
+ ### Security and Responsible Disclosure Policy 
+*Submit a vulnerability:* Vulnerability reports can be submitted through [Bugcrowd](https://bugcrowd.com/cms-vdp). Reports may be submitted anonymously. If you share contact information, we will acknowledge receipt of your report within 3 business days.
+ For more information about our Security, Vulnerability, and Responsible Disclosure Policies, see [SECURITY.md](SECURITY.md).
+ 
+ ## Public Domain 
+This project is in the public domain within the United States, and copyright and related rights in the work worldwide are waived through the [CC0 1.0 Universal public domain dedication](https://creativecommons.org/publicdomain/zero/1.0/) as indicated in [LICENSE](LICENSE).
+ All contributions to this project will be released under the CC0 dedication. By submitting a pull request or issue, you are agreeing to comply with this waiver of copyright interest.
