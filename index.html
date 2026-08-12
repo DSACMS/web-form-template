@@ -4,7 +4,7 @@
 <meta name="description" content="Form to generate a code.json file containing repository metadata">
 
 <head>
-	<title>code.json metadata</title>
+	<title>Form Name</title>
 	<link rel="icon" type="image/x-icon" href="favicon.ico">
 	<link rel="stylesheet" href="css/styles.css">
 
@@ -23,8 +23,6 @@
 	<!-- Render the form -->
 	<script src="js/generateFormComponents.js"></script>
 	<script src="js/formDataToJson.js"></script>
-	<script src="js/exemptionQuizHandler.js"></script>
-	<script src="js/autoGenerateFields.js"></script>
 	
 	<!-- We participate in the US government's analytics program. See the data at analytics.usa.gov. -->
 	<script async type="text/javascript" src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=HHS&subagency=CMS&sitetopic=metadata&siteplatform=GitHubPages" id="_fed_an_ua_tag"></script>
@@ -45,7 +43,8 @@
 						if (!formStartFired) {
 							formStartFired = true;
 							gas4('form_start', {
-								'form_name': 'code.json form',
+								// TODO: Update form name
+								'form_name': 'form name',
 								'form_id': 'formio',
 								'form_destination': window.location.pathname
 							});
@@ -54,13 +53,13 @@
 
 					form.on("submit", function (submission) {
 						console.log("Form Submission here:", submission);
-						createCodeJson(submission.data);
-
+						createResultJson(submission.data);
 						gas4('form_submit', {
-							'form_name': 'code.json form',
+							// TODO: Update form name
+							'form_name': 'form name',
 							'form_id': 'formio',
 							'form_destination': window.location.pathname,
-							'form_submit_text': 'Generate code.json metadata'
+							'form_submit_text': 'Generate data'
 						});
 					});
 				})
@@ -77,15 +76,17 @@
 
 	<div id="formio"></div>
 
-	<!-- code.json Generated Output -->
+	<!-- Actions for Generated Output -->
 	<div id="output">
 		<label class="usa-label" for="json-result"><strong>Your response</strong></label>
 		<textarea class="usa-textarea" rows="30" id="json-result" name="json-result" readonly></textarea>
 		<div class="button-actions">
-			<button class="usa-button usa-button" type="button" href="#"
+			<button class="usa-button usa-button--outline" type="button" href="#"
 				onclick="copyToClipboard(event)">Copy</button>
 			<button class="usa-button usa-button--secondary" type="button" href="#"
 				onclick="downloadFile(event)">Download</button>
+				<button class="usa-button usa-button--base" type="button" href="#"
+				onclick="createGitHubIssueForm(event)">Create Issue</button>
 			<button class="usa-button usa-button--accent-cool" type="button" href="#"
 				onclick="createProjectPR(event)">Create
 				Pull

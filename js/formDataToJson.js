@@ -70,13 +70,16 @@ function populateObject(data, fields) {
 	let reorderedObject = {}
 	const fieldNames = Array.isArray(fields) ? fields : Object.keys(fields || {});
 
-	console.log("fieldz: ", fieldNames)
-
 	for (const field of fieldNames) {
 		let value = data[field];
+		console.log("Field: ", field, "Value: ", value);
 
 		// Does not assign optional properties with blank values
-		if (value == null || value === "" || (Array.isArray(value) && typeof value[0] === 'object' && isEmptyObject(value[0]))) {
+		if (
+			value == null ||
+			value === "" ||
+			(Array.isArray(value) && (value.length === 0 || (typeof value[0] === 'object' && value[0] !== null && isEmptyObject(value[0]))))
+		) {
 			continue;
 		}
 
@@ -95,33 +98,34 @@ function populateObject(data, fields) {
 	return reorderedObject;
 }
 
-async function populateCodeJson(data) {
+async function populateResultObject(data) {
 	const filePath = "schemas/schema.json";
 
 	// Retrieves schema with fields in correct order
 	const schema = await retrieveFile(filePath);
-	let codeJson = {};
+	let resultObject = {};
 
 	// Populates fields with form data
 	if (schema) {
 		const fieldNames = getSchemaFields(schema);
-		codeJson = populateObject(data, fieldNames);
+		resultObject = populateObject(data, fieldNames);
 	} else {
 		console.error("Failed to retrieve JSON data.");
 	}
 
-	return codeJson;
+	return resultObject;
 }
 
 // Creates json object
-async function createCodeJson(data) {
+async function createResultJson(data) {
 	delete data.submit;
-	const codeJson = await populateCodeJson(data);
+	const resultJson = await populateResultObject(data);
 
+	// Stores GitHub API key in window object for PR and Issue creation functions
 	window.gh_api_key = data['gh_api_key']
 	console.log(window.gh_api_key)
 
-	const jsonString = JSON.stringify(codeJson, null, 2);
+	const jsonString = JSON.stringify(resultJson, null, 2);
 	document.getElementById("json-result").value = jsonString;
 }
 
@@ -147,7 +151,29 @@ async function copyToClipboard(event) {
 	document.execCommand("copy")
 }
 
-const NEW_BRANCH = 'code-json-branch' + Math.random().toString(36).substring(2, 10);
+// Triggers local file download
+async function downloadFile(event) {
+	event.preventDefault();
+
+	if (!checkIfResponseGenerated()) {
+		return;
+	}
+
+	const resultJson = document.getElementById("json-result").value
+	const jsonObject = JSON.parse(resultJson);
+	const jsonString = JSON.stringify(jsonObject, null, 2);
+	const blob = new Blob([jsonString], { type: "application/json" });
+
+	// Create anchor element and create download link
+	const link = document.createElement("a");
+	link.href = URL.createObjectURL(blob);
+	link.download = "form-submission.json";
+
+	// Trigger the download
+	link.click();
+}
+
+const NEW_BRANCH = 'submission-json-branch' + Math.random().toString(36).substring(2, 10);
 
 function getOrgAndRepoArgsGitHub(url) {
 	const pattern = /https:\/\/github\.com\/([^\/]+)\/([^\/]+)/;
@@ -162,7 +188,6 @@ function getOrgAndRepoArgsGitHub(url) {
 		throw new Error('Invalid URL!');
 	}
 }
-
 
 async function createBranchOnProject(projectURL, token) {
 	const { owner, repo } = getOrgAndRepoArgsGitHub(projectURL);
@@ -218,7 +243,7 @@ async function createBranchOnProject(projectURL, token) {
 
 async function addFileToBranch(projectURL, token, JSONObj) {
 	const { owner, repo } = getOrgAndRepoArgsGitHub(projectURL);
-	const FILE_PATH = 'lodp-form.json'
+	const FILE_PATH = 'form-submission.json'
 	const createFileApiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${FILE_PATH}`;
 	const encodedContent = btoa(JSONObj);
 	console.log("Content: ", encodedContent);
@@ -233,9 +258,10 @@ async function addFileToBranch(projectURL, token, JSONObj) {
 				'X-GitHub-Api-Version': "2022-11-28"
 			},
 			body: JSON.stringify({
-				message: "Add codejson to project",
+				// TODO: Update fields
+				message: "Add form-submission.json to project",
 				committer: {
-					name: "codejson-generator form site",
+					name: "web form site",
 					email: "opensource@cms.hhs.gov"
 				},
 				content: encodedContent,
@@ -337,79 +363,7 @@ async function createProjectPR(event) {
 	}
 }
 
-// Triggers local file download
-async function downloadFile(event) {
-	event.preventDefault();
-
-	if (!checkIfResponseGenerated()) {
-		return;
-	}
-
-	const codeJson = document.getElementById("json-result").value
-	const jsonObject = JSON.parse(codeJson);
-	const jsonString = JSON.stringify(jsonObject, null, 2);
-	const blob = new Blob([jsonString], { type: "application/json" });
-
-	// Create anchor element and create download link
-	const link = document.createElement("a");
-	link.href = URL.createObjectURL(blob);
-	link.download = "lodp-form.json";
-
-	// Trigger the download
-	link.click();
-}
-
-// Creates Issue Title
-function generateIssueTitle(JSONObj) {
-	let now = new Date();
-	let localeString = now.toLocaleString();
-
-	// const submitterName = JSONObj["Name"] || "Anonymous";
-	return `Living HHS Open Data Plan Suggestions: ${localeString}`;
-}
-
-// Creates Issue Body
-function generateIssueBody(JSONObj) {
-	let body = "## Living HHS Open Data Plan — Feedback to HHS\n\n";
-
-	// body += `**Submitted by:** ${JSONObj["Name"] || "Anonymous"}\n`;
-	// body += `**Email:** ${JSONObj["Email"] || "Not provided"}\n\n`;
-
-	body += "Summary of Suggestions:\n\n";
-
-	const categories = [
-		"HHS Objectives, Values, and Return on Investment (ROI) with Data",
-		"Unified HHS for Data Sharing",
-		"Data Collection Processes for Open Formats",
-		"Data Usage Information",
-		"Prioritizing Public Data Asset Review",
-		"Improving Processes for Meeting Open Data Goals",
-		"Intra-HHS Data Sharing — Be the Change",
-		"Real-World Data for Impact",
-		"Public-Private Partnerships with Transparency to Accelerate Impact",
-		"Public Engagement with, by, and for We the People",
-		"Appendix A - Acronyms, Definitions, Keywords, and Concepts",
-        "Appendix B - Open Science Disclosure Risk Management (2019 NSTC SOS)",
-        "Appendix C - HHS Open Data Action Items with Timeline",
-        "Appendix D - HHS Partnerships with Transparency",
-        "Other"
-	];
-
-	categories.forEach(category => {
-		if (JSONObj[category] && JSONObj[category].Suggestions && JSONObj[category].Suggestions.length > 0) {
-			body += `- **${category}:** ${JSONObj[category].Suggestions.length} suggestions(s)\n`;
-		}
-	});
-
-	body += "\n### Full Submission Details:\n\n";
-	body += "```json\n";
-	body += JSON.stringify(JSONObj, null, 2);
-	body += "\n```\n";
-
-	return body;
-}
-
-// Triggers new issue in GitHub
+// Triggers new issue in GitHub UI
 async function createGitHubIssueForm(event) {
 	event.preventDefault();
 
@@ -447,24 +401,46 @@ async function createGitHubIssueForm(event) {
 	}
 }
 
+// Creates Issue Title
+function generateIssueTitle(JSONObj) {
+	let now = new Date();
+	let localeString = now.toLocaleString();
+
+	// const submitterName = JSONObj["Name"] || "Anonymous";
+	return `Living HHS Open Data Plan Suggestions: ${localeString}`;
+}
+
+// Creates Issue Body
+function generateIssueBody(JSONObj) {
+	let body = "## Issue Title\n\n";
+
+	// body += `**Submitted by:** ${JSONObj["Name"] || "Anonymous"}\n`;
+	// body += `**Email:** ${JSONObj["Email"] || "Not provided"}\n\n`;
+
+	body += "\n### Full Submission Details:\n\n";
+	body += "```json\n";
+	body += JSON.stringify(JSONObj, null, 2);
+	body += "\n```\n";
+
+	return body;
+}
+
 // Create GitHub URL
 function createGitHubNewIssueURL(title, body) {
-	// const textArea = document.getElementById("json-result");
-	// const JSONObj = JSON.parse(textArea.value);
-	// const agency = JSONObj["HHS Division"];
-	// const match = agency.match(/\(([^)]+)\)/);
-
-	const baseURL = "https://github.com/HHS//living-hhs-open-data-plan/issues/new";
+	// TODO: Update the repository URL here for issue creation
+	const baseURL = "https://github.com/${owner}/${repo}/issues/new";
 	const params = new URLSearchParams({
 		title: title,
 		body: body,
+		// TODO: Add labels here
 		labels: ['suggestions', 'data-management']
 	});
 
 	return `${baseURL}?${params.toString()}`;
 }
 
-// Creates Auto Issue
+// Creates Auto Issue using GH API Key
+// TODO: Fix functionality
 async function createAutoGitHubIssue(event) {
 	event.preventDefault();
 
@@ -502,10 +478,12 @@ async function createAutoGitHubIssue(event) {
 async function createIssueOnGitHub(token, title, body) {
 	const textArea = document.getElementById("json-result");
 	const JSONObj = JSON.parse(textArea.value);
-	const agency = JSONObj["HHS Division"];
+	// TODO: Add agency here
+	const agency = JSONObj["Agency Division"];
 	const match = agency.match(/\(([^)]+)\)/);
 
-	const createIssueAPIURL = "https://api.github.com/repos/HHS/living-hhs-open-data-plan/issues";
+	// TODO: Update the repository URL here for issue creation
+	const createIssueAPIURL = "https://api.github.com/repos/${owner}/${repo}/issues";
 
 	const response = await fetch(createIssueAPIURL,
 		{
@@ -518,6 +496,7 @@ async function createIssueOnGitHub(token, title, body) {
 			body: JSON.stringify({
 				title: title,
 				body: body,
+				// TODO: Add labels here
 				labels: ['suggestions', 'data-management']
 			})
 		});
@@ -537,7 +516,7 @@ async function createIssueOnGitHub(token, title, body) {
 
 }
 
-// Triggers email(mailtolink)
+// Triggers email using mailtolink
 async function emailFile(event) {
 	event.preventDefault();
 
@@ -545,8 +524,8 @@ async function emailFile(event) {
 		return;
 	}
 
-	const codeJson = document.getElementById("json-result").value
-	const jsonObject = JSON.parse(codeJson);
+	const resultJson = document.getElementById("json-result").value
+	const jsonObject = JSON.parse(resultJson);
 
 	try {
 		const cleanData = { ...jsonObject };
@@ -554,27 +533,27 @@ async function emailFile(event) {
 
 		const jsonString = JSON.stringify(cleanData, null, 2);
 
-		const subject = "Living HHS Open Data Plan — Feedback to HHS";
-		const body = `Hello,\n\nI have submitted suggestions for Living HHS Open Data Plan:\n\n${jsonString}\n\nThank you!`;
+		const subject = "Email subject for form submission";
+		const body = `Hello,\n\nI have submitted my responses for this form:\n\n${jsonString}\n\nThank you!`;
 
-		// const recipients = ["opensource@cms.hhs.gov", "cdo@hhs.gov"];
-		const recipients = ["opensource@cms.hhs.gov", "cdo@hhs.gov"];
+		// TODO: Add email addresses to the recipients array
+		const recipients = ["opensource@cms.hhs.gov"];
 
 		const mailtoLink = `mailto:${recipients}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
 		window.location.href = mailtoLink;
 
 		console.log("Email client opened");
-	} catch {
+	} catch (error) {
 		console.error("Error preparing email:", error);
 		showNotificationModal("Error preparing email. Please try again or copy the data manually.", 'error');
 	}
 }
 
-window.createCodeJson = createCodeJson;
+window.createResultJson = createResultJson;
 window.copyToClipboard = copyToClipboard;
 window.downloadFile = downloadFile;
 window.createProjectPR = createProjectPR;
-window.createAutoGitHubIssue = createAutoGitHubIssue;
 window.createGitHubIssueForm = createGitHubIssueForm;
+window.createAutoGitHubIssue = createAutoGitHubIssue;
 window.emailFile = emailFile;
