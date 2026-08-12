@@ -24,6 +24,11 @@ This form is designed to be based on any JSON schema, making it highly customiza
 
 Review [schema.json](./schemas/schema.json) to see what components and field types are available for use.
 
+To run the project:
+```
+python3 -m http.server 8000 
+```
+
 # {{ cookiecutter.project_name }}
 {{ cookiecutter.project_description }}
 
