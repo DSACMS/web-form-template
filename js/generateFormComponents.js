@@ -31,9 +31,6 @@ function determineValidation(fieldName, fieldObject, requiredArray) {
 
 // Function that determines type of form component based on field
 function determineType(field) {
-	if (field.enum && field.enum.includes("HHS Objectives, Values, and Return on Investment (ROI) with Data")) {
-		return "select"
-	}
 	if (field.type === "object") {
 		return "container";
 	} else if (field.type === "array") {
@@ -57,7 +54,10 @@ function determineType(field) {
 		return "integer";
 	} else if (field.type === "boolean") {
 		return "select-boolean";
-	} else if (field.type === "string" || field.type.includes("string")) {
+	} else if (field.type === "content") {
+		return "content";
+	}
+	else if (field.type === "string" || field.type.includes("string")) {
 		if (field.format == "date-time") {
 			return "datetime";
 		}
@@ -66,38 +66,23 @@ function determineType(field) {
 }
 
 // Creates Form.io component based on json field type
-function createComponent(fieldName, fieldObject, requiredArray) {
+function createComponent(fieldName, fieldObject, requiredArray, prefix) {
 	const componentType = determineType(fieldObject);
 	const validate = determineValidation(fieldName, fieldObject, requiredArray);
+	const label = !validate.required && !prefix ? fieldName + " (optional)" : fieldName;
 	switch (componentType) {
-		case "select":
-			return {
-				type: "select",
-				key: fieldName,
-				label: fieldName,
-				widget: "choices",
-				data: {
-					values: fieldObject.enum.map(item => ({
-						label: item,
-						value: item
-					}))
-				},
-				validate: {
-					required: requiredArray.includes(fieldName)
-				}
-			};
 		case "textfield":
 			return {
 				type: "textfield",
 				key: fieldName,
-				label: fieldName,
+				label: label,
 				input: true,
 				description: fieldObject["description"],
 				validate
 			};
 		case "tags":
 			return {
-				label: fieldName,
+				label: label,
 				tableView: false,
 				storeas: "array",
 				validateWhenHidden: false,
@@ -109,7 +94,7 @@ function createComponent(fieldName, fieldObject, requiredArray) {
 			};
 		case "number":
 			return {
-				label: fieldName,
+				label: label,
 				applyMaskOn: "change",
 				mask: false,
 				tableView: false,
@@ -126,7 +111,7 @@ function createComponent(fieldName, fieldObject, requiredArray) {
 			};
 		case "integer":
 			return {
-				label: fieldName,
+				label: label,
 				applyMaskOn: "change",
 				mask: false,
 				tableView: false,
@@ -146,7 +131,7 @@ function createComponent(fieldName, fieldObject, requiredArray) {
 			var options = transformArrayToOptions(fieldObject.enum);
 			console.log("checking options here:", options);
 			return {
-				label: fieldName,
+				label: label,
 				optionsLabelPosition: "right",
 				inline: false,
 				tableView: false,
@@ -162,7 +147,7 @@ function createComponent(fieldName, fieldObject, requiredArray) {
 			var options = transformArrayToOptions(fieldObject.items.enum);
 			console.log("checking options here:", options);
 			return {
-				label: fieldName,
+				label: label,
 				optionsLabelPosition: "right",
 				tableView: false,
 				values: options,
@@ -176,7 +161,7 @@ function createComponent(fieldName, fieldObject, requiredArray) {
 			};
 		case "datetime":
 			return {
-				label: fieldName,
+				label: label,
 				tableView: false,
 				datePicker: {
 					disableWeekends: false,
@@ -204,7 +189,7 @@ function createComponent(fieldName, fieldObject, requiredArray) {
 			};
 		case "select-boolean":
 			return {
-				label: fieldName,
+				label: label,
 				widget: "html5",
 				tableView: true,
 				data: {
@@ -228,7 +213,7 @@ function createComponent(fieldName, fieldObject, requiredArray) {
 			};
 		case "container":
 			return {
-				label: fieldName,
+				label: label,
 				hideLabel: false,
 				tableView: false,
 				validateWhenHidden: false,
@@ -241,8 +226,7 @@ function createComponent(fieldName, fieldObject, requiredArray) {
 			};
 		case "datagrid":
 			return {
-				label: fieldName,
-				hideLabel: true,
+				label: label,
 				reorder: false,
 				addAnotherPosition: "bottom",
 				layoutFixed: false,
@@ -256,16 +240,19 @@ function createComponent(fieldName, fieldObject, requiredArray) {
 				key: fieldName,
 				type: "datagrid",
 				input: true,
-				components: [
-					{
-						type: "panel",
-						label: "",
-						title: "",
-						key: fieldName,
-						components: [],
-					}
-				],
+				components: [],
 				validate
+			};
+		case "content":
+			return {
+				html: `<p class="margin-top-neg-3 margin-bottom-4 text-base-dark">${fieldObject["content"]}</p>`,
+				label: label,
+				customClass: fieldObject["className"],
+				refreshOnChange: false,
+				key: fieldName,
+				type: "content",
+				input: false,
+				tableView: false
 			};
 		default:
 			break;
@@ -296,17 +283,28 @@ function createAllComponents(schema, prefix = "") {
 			console.log("key at play:", key);
 			const fullKey = prefix ? `${prefix}.${key}` : key;
 
-			let fieldComponent = createComponent(key, value, requiredArray);
+			let fieldComponent = createComponent(key, value, requiredArray, prefix);
 
 			if (fieldComponent.type === "container") {
-				console.log("container key at play:", key);
 				fieldComponent.components = createAllComponents(value, fullKey);
 			}
 			else if (fieldComponent.type === "datagrid") {
-				fieldComponent.components[0].components = createAllComponents(value.items, fullKey);
+				fieldComponent.components = createAllComponents(value.items, fullKey);
 			}
 
 			components.push(fieldComponent);
+
+			// Add description below all object fields 
+			if (fieldComponent.type === "datagrid") {
+				const labelKey = `${key}-description`;
+				const label = {
+					type: "content",
+					content: value.description,
+					className: ".margin-bottom-neg-205"
+				}
+				const labelComponent = createComponent(labelKey, label, []);
+				components.push(labelComponent);
+			}
 		}
 	}
 
@@ -325,7 +323,8 @@ async function createFormComponents() {
 
 	components = createAllComponents(jsonData);
 
-	//Form text box to input GitHub API Key
+	// TODO: Add GitHub API Key input field to form once backend functionality is implemented
+	// Form text box to input GitHub API Key
 	// components.push({
 	// 	"label": "GitHub API Key (optional)",
 	// 	"disableSortingAndFiltering": false,

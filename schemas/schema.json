@@ -1,31 +1,101 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Title of the Web Form",
-    "description": "Here is the description of the web form. Using schema.json, this generates each of the form components, including the title, description, and each of the questions. The form is generated using the USWDS Form.io library.",
     "type": "object",
+    "description": "Welcome to the web form template! The form is built using the <a href=\"https://github.com/formio/uswds\" target=\"_blank\" rel=\"noopener noreferrer\">USWDS Form.io template module</a>. <br><br>Using <a href=\"https://github.com/DSACMS/web-form-template/blob/main/schemas/schema.json\" target=\"_blank\" rel=\"noopener noreferrer\"><strong>schema.json</strong></a>, this generates each of the form components including the title, description, and each question. The form can support the following question/field types:<ul><li>Short text answer</li><li>Multiple-choice question</li><li>Multi-select question</li><li>Numeric field</li><li>List of free-text entries</li><li>True or False</li><li>Date/time entry</li><li>Table / Datagrid containing sub-fields</li><li>Email address</li><li>Website or link</li></ul>Once submitted, the form data is converted into structured JSON data ready to be shared. The output can copied, downloaded as a JSON file, emailed, and sent via issue or pull request to the GitHub repository.",
     "properties": {
         "items": {
             "Question 1: Text field": {
                 "type": "string",
                 "description": "Here is the description! type: string"
             },
-        "Question 2: Multiple choice": {
-            "type": "string",
-            "enum": [
-                "Ideation",
-                "Development",
-                "Alpha",
-                "Beta",
-                "Release Candidate",
-                "Production",
-                "Archival"
-            ],
-            "description": "Development status of the project"
-        }
+            "Question 2: Multiple choice": {
+                "type": "string",
+                "enum": [
+                        "West",
+                        "Midwest",
+                        "South",
+                        "Northeast"
+                ],
+                "description": "type:string with enumerated values"
+            },
+            "Question 3: Multiple select": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "Apple",
+                            "Banana",
+                            "Kiwi",
+                            "Orange",
+                            "Raspberry",
+                            "Strawberry",
+                            "Watermelon"
+                        ]
+                    },
+                    "description": "type:array with enumerated values"
+                },
+            "Question 4: Number": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Only enter a number. Can set minimum or maximum values. WIP. TODO: Add validation for minimum and maximum values"
+            },
+            "Question 5: Free text with multiple entries": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "uniqueItems": true,
+                "description": "Enter a response and hit enter for each item."
+            },
+            "Question 6: Boolean": {
+                        "type": "boolean",
+                        "description": "Dropdown selection of true or false"
+                    },
+            "Question 7: Date time created": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Use date time picker to select date"
+            },
+            "Question 8: Table/Datagrid": {
+                "type": "array",
+                "description": "Family Members",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "Full Name": {
+                            "type": "string",
+                            "description": "Full name of the family member"
+                        },
+                        "Birthday": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Birthday"
+                        },
+                        "Is Underage?": {
+                            "type": "boolean",
+                            "description": "Are they under the age of 18?"
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "Question 9: Email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "WIP. TODO: Add validation for format:email"
+            },
+            "Question 10: Link": {
+                "type": "string",
+                "format": "uri",
+                "description": "WIP. TODO: Add validation for format:uri"
+            }
         }
     },
     "required": [
         "Question 1: Text field",
-        "Question 2: Multiple choice"
+        "Question 2: Multiple choice",
+        "Question 3: Multiple select",
+        "Question 4: Number"
     ]
 }

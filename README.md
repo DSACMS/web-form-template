@@ -1,4 +1,35 @@
 # Web Form Template
+
+## About the Project
+A simple customizable web form built using USWDS Form.io Template Module.
+
+https://dsacms.github.io/web-form-template/
+
+To produce the form, a [JSON schema](./schemas/schema.json) is ingested where it transforms each field to a Form.io component. The form can support the following question/field types:
+
+- Short text answer
+- Multiple-choice question
+- Multi-select question
+- Numeric field
+- List of free-text entries
+- True or False
+- Date/time entry
+- Table / Datagrid containing sub-fields
+- Email address
+- Website or link
+
+Once submitted, the form data is converted into structured JSON data ready to be shared. The output can copied, downloaded as a JSON file, emailed, and sent via issue or pull request to the GitHub repository.
+
+This form is designed to be based on any JSON schema, making it highly customizable and adaptable to a wide range of use cases. Using schema.json, developers can generate forms with question types, validation rules, and value structures. Because the form is schema-based rather than hardcoded, it can be extended to support nearly any data collection workflow, from simple intake forms to more complex structured submissions.
+
+Review [schema.json](./schemas/schema.json) to see what components and field types are available for use.
+
+To run the project:
+```
+python3 -m http.server 8000 
+```
+
+# {{ cookiecutter.project_name }}
 {{ cookiecutter.project_description }}
 
 ## About the Project
