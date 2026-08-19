@@ -1,5 +1,6 @@
 body {
-    padding: 20px 40px;
+    padding: 1.25rem 2.5rem;
+    padding: clamp(0.75rem, 4vw, 2.5rem);
 }
 
 textarea {
@@ -8,14 +9,14 @@ textarea {
 
 .auto-generation,
 .exemptions {
-    border-radius: 15px;
-    padding: 10px 20px;
-    padding-bottom: 25px;
-    margin-bottom: 20px;
     background: #f4f4f4;
-    width: 100%;
-    max-width: 1300px;
+    border-radius: 15px;
     box-sizing: border-box;
+    margin-bottom: 1.25rem;
+    max-width: 1300px;
+    padding: 0.625rem 1.25rem;
+    padding-bottom: 1.5625rem;
+    width: 100%;
 }
 
 #github-url-form {
@@ -84,24 +85,25 @@ textarea {
     background-size: contain;
 }
 
-/* Hide icon rendered directly on the button */
-.formio-button-remove-row::before,
-.formio-button-remove-row::after {
-    content: "" !important;
-}
-
-/* Inject the SVG icon on the button itself */
-.formio-button-remove-row {
-    position: relative;
-}
-
-.formio-button-remove-row::before {
-    content: "" !important;
+.formio-button-remove-row i.remove-circle {
+    font-size: 0;
     display: inline-block;
     width: 24px;
     height: 24px;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffffff'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-size: contain;
-    vertical-align: middle;
+}
+
+@media (max-width: 400px) {
+    .auto-generation,
+    .exemptions {
+        padding: 0.625rem 0.75rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .formio-component-datagrid td {
+        vertical-align: top;
+    }
 }
